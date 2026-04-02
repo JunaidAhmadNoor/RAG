@@ -22,6 +22,9 @@ app.include_router(admin_router)
 app.include_router(documents_router)
 app.include_router(chat_router)
 
+@app.get("/")
+def root():
+    return {"status": "API is running"}
 
 @app.get("/health")
 def health():
