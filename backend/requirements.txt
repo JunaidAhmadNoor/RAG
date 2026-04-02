@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic-settings
+pymongo
+passlib[bcrypt]
+python-jose[cryptography]
+chromadb
+sentence-transformers
+openai
+pypdf
+python-docx
+certifi
