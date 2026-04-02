@@ -2,7 +2,8 @@ import axios from 'axios'
 import { authStore } from '../store/authStore'
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000',
+  // Use a build-time env var in production (Cloudflare / Railway), but keep localhost as fallback.
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
 })
 
 api.interceptors.request.use((config) => {
