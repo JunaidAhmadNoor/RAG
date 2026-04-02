@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4o-mini"
     cors_origins: str = "http://localhost:5173"
 
+    # Optional: regex so Cloudflare Pages preview URLs (e.g. *.pages.dev) match without listing each hash.
+    # Env: CORS_ORIGIN_REGEX
+    cors_origin_regex: str | None = None
+
     # Optional: full path to tesseract.exe on Windows if not on PATH
     tesseract_cmd: str | None = None
 
