@@ -1,3 +1,4 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -29,6 +30,12 @@ class Settings(BaseSettings):
 
     # OCR: auto | rapidocr | easyocr | tesseract (env: OCR_BACKEND)
     ocr_backend: str = "auto"
+
+    @field_validator("ollama_base_url", mode="after")
+    @classmethod
+    def normalize_ollama_base_url(cls, v: str) -> str:
+        s = (v or "").strip().rstrip("/")
+        return s
 
 
 settings = Settings()

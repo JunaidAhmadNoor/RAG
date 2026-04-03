@@ -1,4 +1,6 @@
+import logging
 import re
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,7 +11,23 @@ from app.api.chat import router as chat_router
 from app.api.documents import router as documents_router
 from app.core.config import settings
 
-app = FastAPI(title="RAG Role-Based Chat API")
+_log = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    ou = settings.ollama_base_url
+    _log.warning("OLLAMA_BASE_URL effective value: %s", ou)
+    if "${{" in ou or "{{" in ou:
+        _log.error(
+            "OLLAMA_BASE_URL still contains a template — Railway did not substitute it. "
+            "Use the Variables UI 'Reference' picker for Ollama → RAILWAY_PRIVATE_DOMAIN, "
+            "or set OLLAMA_BASE_URL to the Ollama TCP proxy URL (http://HOST:PORT)."
+        )
+    yield
+
+
+app = FastAPI(title="RAG Role-Based Chat API", lifespan=_lifespan)
 
 
 def _parse_cors_origins(raw: str) -> list[str]:
