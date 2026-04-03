@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import re
 from datetime import UTC, datetime
 from urllib import request
@@ -18,6 +19,7 @@ from pypdf import PdfReader
 from app.core.config import settings
 from app.db.mongodb import documents_collection
 
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Embedding
@@ -295,7 +297,9 @@ def _ask_ollama(question: str, context: str) -> str | None:
             result = json.loads(raw)
             text = (result.get("response") or "").strip()
             return text or None
-    except (URLError, TimeoutError, json.JSONDecodeError, OSError):
+    except (URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
+        base = settings.ollama_base_url.rstrip("/")
+        logger.warning("Ollama /api/generate failed (base=%s model=%s): %s", base, settings.ollama_model, exc)
         return None
 
 
@@ -438,7 +442,8 @@ def _ask_ollama_casual(message: str, has_documents: bool) -> str | None:
             result = json.loads(raw)
             text = (result.get("response") or "").strip()
             return text or None
-    except (URLError, TimeoutError, json.JSONDecodeError, OSError):
+    except (URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
+        logger.warning("Ollama casual /api/generate failed: %s", exc)
         return None
 
 
