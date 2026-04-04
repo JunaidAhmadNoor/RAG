@@ -9,13 +9,16 @@ from app.api.admin import router as admin_router
 from app.api.auth import router as auth_router
 from app.api.chat import router as chat_router
 from app.api.documents import router as documents_router
+from app.api.super_admin import router as super_admin_router
 from app.core.config import settings
+from app.services.super_admin_service import bootstrap_superadmin_if_configured
 
 _log = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
+    bootstrap_superadmin_if_configured()
     ou = settings.ollama_base_url
     _log.warning("OLLAMA_BASE_URL effective value: %s", ou)
     if "${{" in ou or "{{" in ou:
@@ -65,6 +68,7 @@ if _regex:
 app.add_middleware(CORSMiddleware, **_cors_kw)
 
 app.include_router(auth_router)
+app.include_router(super_admin_router)
 app.include_router(admin_router)
 app.include_router(documents_router)
 app.include_router(chat_router)

@@ -16,12 +16,26 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     user = users_collection.find_one({"username": payload["sub"]}, {"_id": 0, "password": 0})
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    if user.get("is_active") is False:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is disabled",
+        )
     return user
 
 
 def admin_required(current_user=Depends(get_current_user)):
     if current_user["role"] != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+    return current_user
+
+
+def super_admin_required(current_user=Depends(get_current_user)):
+    if current_user.get("role") != "superadmin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Super admin access required",
+        )
     return current_user
 
 

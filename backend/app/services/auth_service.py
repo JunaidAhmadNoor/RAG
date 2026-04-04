@@ -15,7 +15,12 @@ from app.schemas.auth import TokenResponse
 
 def _token_payload(user: dict) -> TokenResponse:
     role = user["role"]
-    can_upload = role == "admin" or bool(user.get("can_upload", False))
+    if role == "superadmin":
+        can_upload = False
+    elif role == "admin":
+        can_upload = True
+    else:
+        can_upload = bool(user.get("can_upload", False))
     access_token = create_access_token(subject=user["username"], role=role)
     refresh_token = create_refresh_token(subject=user["username"])
     refresh_tokens_collection.insert_one(
@@ -42,6 +47,7 @@ def register_admin_only(username: str, password: str) -> None:
             "role": "admin",
             "owner_admin": username,
             "can_upload": True,
+            "is_active": True,
             "created_at": datetime.now(UTC),
         }
     )
@@ -51,6 +57,11 @@ def login_user(username: str, password: str) -> TokenResponse:
     user = users_collection.find_one({"username": username})
     if not user or not verify_password(password, user["password"]):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
+    if user.get("is_active") is False:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is disabled",
+        )
 
     return _token_payload(user)
 
@@ -69,8 +80,19 @@ def refresh_access_token(refresh_token: str) -> TokenResponse:
     user = users_collection.find_one({"username": username})
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    if user.get("is_active") is False:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is disabled",
+        )
 
-    can_upload = user["role"] == "admin" or bool(user.get("can_upload", False))
+    role = user["role"]
+    if role == "superadmin":
+        can_upload = False
+    elif role == "admin":
+        can_upload = True
+    else:
+        can_upload = bool(user.get("can_upload", False))
     new_access = create_access_token(subject=username, role=user["role"])
     return TokenResponse(
         access_token=new_access,

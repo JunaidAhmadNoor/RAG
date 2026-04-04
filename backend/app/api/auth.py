@@ -22,7 +22,12 @@ def register(payload: RegisterRequest):
 @router.get("/me", response_model=MeResponse)
 def me(current_user=Depends(get_current_user)):
     role = current_user["role"]
-    can_upload = role == "admin" or bool(current_user.get("can_upload", False))
+    if role == "superadmin":
+        can_upload = False
+    elif role == "admin":
+        can_upload = True
+    else:
+        can_upload = bool(current_user.get("can_upload", False))
     return MeResponse(
         username=current_user["username"],
         role=role,

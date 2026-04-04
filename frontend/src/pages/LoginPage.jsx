@@ -1,6 +1,6 @@
 import { App, Button, Card, Form, Input, Segmented, Typography } from 'antd'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { authStore } from '../store/authStore'
 
 const LoginPage = () => {
@@ -21,7 +21,8 @@ const LoginPage = () => {
         await login(values.username, values.password)
         message.success('Signed in')
       }
-      navigate('/chat')
+      const r = authStore.getState().role
+      navigate(r === 'superadmin' ? '/superadmin' : '/chat')
     } catch (err) {
       message.error(err.response?.data?.detail || 'Request failed')
     } finally {
@@ -32,6 +33,9 @@ const LoginPage = () => {
   return (
     <div className="auth-page">
       <Card className="auth-card">
+        <div style={{ marginBottom: 12 }}>
+          <Link to="/">← Back to home</Link>
+        </div>
         <Typography.Title level={2}>RAG Knowledge Chat</Typography.Title>
         <Typography.Paragraph type="secondary">
           Sign up creates an <strong>admin</strong> account. Admins add team users and can grant upload permission.

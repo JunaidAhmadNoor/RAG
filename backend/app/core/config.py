@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     # OCR: auto | rapidocr | easyocr | tesseract (env: OCR_BACKEND)
     ocr_backend: str = "auto"
 
+    # Optional: create first superadmin on startup if none exists (set once, then remove from env).
+    superadmin_bootstrap_username: str | None = None
+    superadmin_bootstrap_password: str | None = None
+
     @field_validator("ollama_base_url", mode="after")
     @classmethod
     def normalize_ollama_base_url(cls, v: str) -> str:

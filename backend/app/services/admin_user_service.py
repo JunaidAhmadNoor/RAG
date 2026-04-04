@@ -20,6 +20,7 @@ def create_user_for_admin(
             "role": "user",
             "owner_admin": admin_username,
             "can_upload": can_upload,
+            "is_active": True,
             "created_at": datetime.now(UTC),
         }
     )

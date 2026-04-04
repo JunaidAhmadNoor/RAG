@@ -323,3 +323,336 @@ body {
 .nav-drawer .ant-menu {
   background: transparent;
 }
+
+.app-shell--super {
+  min-height: 100vh;
+}
+
+.app-shell--super .page-content {
+  max-width: 1200px;
+}
+
+/* ---- Landing page ---- */
+.landing-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: #e8e6f4;
+}
+
+.landing-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding: 16px 20px;
+  background: rgba(6, 6, 12, 0.75);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.landing-nav-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.landing-logo {
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+  background: linear-gradient(120deg, #c4b5ff, #8b7cff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.landing-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.landing-nav-link {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.landing-cta-nav {
+  border-radius: 10px !important;
+}
+
+.landing-hero {
+  position: relative;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 20px 64px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 40px;
+  align-items: center;
+}
+
+@media (min-width: 900px) {
+  .landing-hero {
+    grid-template-columns: 1.05fr 0.95fr;
+    padding-top: 72px;
+  }
+}
+
+.landing-hero-glow {
+  position: absolute;
+  inset: -20% -30% auto -20%;
+  height: 420px;
+  background: radial-gradient(ellipse at 30% 20%, rgba(124, 92, 255, 0.35), transparent 55%);
+  pointer-events: none;
+  animation: landing-pulse 8s ease-in-out infinite;
+}
+
+@keyframes landing-pulse {
+  0%,
+  100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.landing-hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+.landing-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(124, 92, 255, 0.2);
+  border: 1px solid rgba(139, 124, 255, 0.35);
+  margin-bottom: 16px;
+}
+
+.landing-title {
+  font-size: clamp(2rem, 5vw, 3.25rem) !important;
+  line-height: 1.12 !important;
+  margin-bottom: 16px !important;
+  font-weight: 700 !important;
+  color: #f5f3ff !important;
+}
+
+.landing-title-accent {
+  background: linear-gradient(120deg, #a599ff, #6b5cff, #c084fc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.landing-lead {
+  font-size: 1.05rem !important;
+  max-width: 520px;
+  color: rgba(232, 230, 244, 0.72) !important;
+}
+
+.landing-hero-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.landing-hero-primary {
+  border-radius: 12px !important;
+  height: 48px !important;
+  padding: 0 28px !important;
+  font-weight: 600 !important;
+}
+
+.landing-hero-secondary {
+  border-radius: 12px !important;
+  height: 48px !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #e8e6f4 !important;
+}
+
+.landing-hero-visual {
+  perspective: 1200px;
+  position: relative;
+  z-index: 1;
+}
+
+.landing-mock-card {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(14, 14, 28, 0.9);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.landing-mock-header {
+  display: flex;
+  gap: 6px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.landing-mock-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.landing-mock-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 200px;
+}
+
+.landing-mock-msg {
+  max-width: 88%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.landing-mock-msg-user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, rgba(124, 92, 255, 0.45), rgba(124, 92, 255, 0.2));
+  border: 1px solid rgba(139, 124, 255, 0.3);
+}
+
+.landing-mock-msg-bot {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.landing-mock-sources {
+  display: block;
+  margin-top: 8px;
+  font-size: 11px;
+  opacity: 0.65;
+}
+
+.landing-features {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 20px 72px;
+}
+
+.landing-section-title {
+  text-align: center;
+  color: #f5f3ff !important;
+  margin-bottom: 8px !important;
+}
+
+.landing-section-sub {
+  text-align: center;
+  max-width: 480px;
+  margin: 0 auto 40px !important;
+}
+
+.landing-feature-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 640px) {
+  .landing-feature-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 960px) {
+  .landing-feature-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.landing-feature-card {
+  padding: 22px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(18, 18, 34, 0.75);
+  height: 100%;
+}
+
+.landing-feature-icon {
+  font-size: 26px;
+  color: #a599ff;
+  margin-bottom: 12px;
+}
+
+.landing-cta-band {
+  max-width: 900px;
+  margin: 0 auto 64px;
+  padding: 40px 28px;
+  text-align: center;
+  border-radius: 20px;
+  border: 1px solid rgba(139, 124, 255, 0.25);
+  background: linear-gradient(145deg, rgba(124, 92, 255, 0.18), rgba(20, 20, 40, 0.9));
+}
+
+.landing-cta-title {
+  color: #f5f3ff !important;
+  margin-bottom: 8px !important;
+}
+
+.landing-cta-text {
+  margin-bottom: 20px !important;
+}
+
+.landing-cta-button {
+  border-radius: 12px !important;
+  height: 46px !important;
+  padding: 0 32px !important;
+}
+
+.landing-footer {
+  margin-top: auto;
+  padding: 24px 20px 32px;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ---- Super admin dashboard ---- */
+.superadmin-page {
+  width: 100%;
+}
+
+.superadmin-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.superadmin-stats {
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+.superadmin-stat-card {
+  min-width: 160px;
+  background: rgba(18, 18, 34, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.superadmin-table-card {
+  background: rgba(18, 18, 34, 0.92) !important;
+}

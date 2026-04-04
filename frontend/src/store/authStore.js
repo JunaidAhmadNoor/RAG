@@ -11,7 +11,8 @@ export const authStore = create((set, get) => ({
   canUpload: persisted.canUpload ?? false,
 
   saveAuth: (data, username) => {
-    const canUpload = data.can_upload ?? (data.role === 'admin')
+    const canUpload =
+      data.role === 'admin' || (data.role === 'user' && (data.can_upload ?? false))
     const next = {
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
@@ -36,7 +37,8 @@ export const authStore = create((set, get) => ({
     const refreshToken = get().refreshToken
     if (!refreshToken) throw new Error('Missing refresh token')
     const { data } = await api.post('/api/auth/refresh', { refresh_token: refreshToken })
-    const canUpload = data.can_upload ?? (data.role === 'admin')
+    const canUpload =
+      data.role === 'admin' || (data.role === 'user' && (data.can_upload ?? false))
     const next = {
       ...get(),
       accessToken: data.access_token,

@@ -6,17 +6,30 @@ import AdminDocumentsPage from './pages/AdminDocumentsPage'
 import AdminUploadPage from './pages/AdminUploadPage'
 import AdminUsersPage from './pages/AdminUsersPage'
 import ChatPage from './pages/ChatPage'
+import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
+import SuperAdminDashboard from './pages/SuperAdminDashboard'
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/superadmin"
+          element={
+            <ProtectedRoute role="superadmin">
+              <AppLayout variant="superadmin">
+                <SuperAdminDashboard />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/chat"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute blockRoles={['superadmin']} redirectIfBlocked="/superadmin">
               <AppLayout fullBleed>
                 <ChatPage />
               </AppLayout>
@@ -26,7 +39,7 @@ function App() {
         <Route
           path="/admin/upload"
           element={
-            <ProtectedRoute requireUpload>
+            <ProtectedRoute requireUpload blockRoles={['superadmin']} redirectIfBlocked="/superadmin">
               <AppLayout>
                 <AdminUploadPage />
               </AppLayout>
@@ -36,7 +49,7 @@ function App() {
         <Route
           path="/admin/users"
           element={
-            <ProtectedRoute role="admin">
+            <ProtectedRoute role="admin" blockRoles={['superadmin']} redirectIfBlocked="/superadmin">
               <AppLayout>
                 <AdminUsersPage />
               </AppLayout>
@@ -46,14 +59,14 @@ function App() {
         <Route
           path="/admin/documents"
           element={
-            <ProtectedRoute role="admin">
+            <ProtectedRoute role="admin" blockRoles={['superadmin']} redirectIfBlocked="/superadmin">
               <AppLayout>
                 <AdminDocumentsPage />
               </AppLayout>
             </ProtectedRoute>
           }
         />
-        <Route path="*" element={<Navigate to="/chat" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )

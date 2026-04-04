@@ -1,5 +1,6 @@
 import { Button, Drawer, Grid, Layout, Menu, Typography } from 'antd'
 import {
+  CrownOutlined,
   FileAddOutlined,
   FileTextOutlined,
   LogoutOutlined,
@@ -13,14 +14,14 @@ import { authStore } from '../store/authStore'
 
 const { Header, Content } = Layout
 
-const AppLayout = ({ children, fullBleed = false }) => {
+const AppLayout = ({ children, fullBleed = false, variant = 'default' }) => {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const screens = Grid.useBreakpoint()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const { role, username, canUpload, logout } = authStore()
 
-  const items = [
+  const defaultItems = [
     { key: '/chat', icon: <MessageOutlined />, label: <Link to="/chat">Chat</Link> },
     ...(canUpload || role === 'admin'
       ? [{ key: '/admin/upload', icon: <FileAddOutlined />, label: <Link to="/admin/upload">Upload</Link> }]
@@ -37,6 +38,23 @@ const AppLayout = ({ children, fullBleed = false }) => {
       : []),
   ]
 
+  const superItems = [
+    {
+      key: '/superadmin',
+      icon: <CrownOutlined />,
+      label: <Link to="/superadmin">Platform console</Link>,
+    },
+  ]
+
+  const items = variant === 'superadmin' ? superItems : defaultItems
+  const brandTitle = variant === 'superadmin' ? 'Platform admin' : 'RAG Assistant'
+  const shellClass =
+    fullBleed && variant !== 'superadmin'
+      ? 'app-shell app-shell--fill'
+      : variant === 'superadmin'
+        ? 'app-shell app-shell--super'
+        : 'app-shell'
+
   const menuProps = {
     mode: 'horizontal',
     selectedKeys: [pathname],
@@ -46,7 +64,7 @@ const AppLayout = ({ children, fullBleed = false }) => {
   }
 
   return (
-    <Layout className={fullBleed ? 'app-shell app-shell--fill' : 'app-shell'}>
+    <Layout className={shellClass}>
       <Header className="app-header">
         {!screens.md && (
           <Button
@@ -58,7 +76,7 @@ const AppLayout = ({ children, fullBleed = false }) => {
           />
         )}
         <Typography.Title level={4} className="app-brand">
-          RAG Assistant
+          {brandTitle}
         </Typography.Title>
         {screens.md ? (
           <Menu {...menuProps} style={{ flex: 1 }} />
