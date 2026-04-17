@@ -2,16 +2,18 @@ import {
   App,
   Avatar,
   Button,
+  Card,
   Drawer,
   Empty,
   Flex,
+  Grid,
   Input,
   Layout,
   List,
   Spin,
   Tag,
+  theme,
   Typography,
-  Grid,
 } from 'antd'
 import {
   DeleteOutlined,
@@ -36,6 +38,7 @@ const WELCOME_TEXT =
 
 const ChatPage = () => {
   const { message } = App.useApp()
+  const { token } = theme.useToken()
   const screens = Grid.useBreakpoint()
   const listEndRef = useRef(null)
   const [sessions, setSessions] = useState([])
@@ -158,83 +161,118 @@ const ChatPage = () => {
       }
       setMessages((prev) => {
         const base = prev.filter((m) => !m.local)
-        return [
-          ...base,
-          { role: 'assistant', text: data.answer, sources: data.sources || [] },
-        ]
+        return [...base, { role: 'assistant', text: data.answer, sources: data.sources || [] }]
       })
       loadSessions()
     } catch (err) {
       message.error(err.response?.data?.detail || 'Message failed')
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', text: 'Something went wrong. Try again.', error: true },
-      ])
+      setMessages((prev) => [...prev, { role: 'assistant', text: 'Something went wrong. Try again.', error: true }])
     } finally {
       setLoading(false)
     }
   }
 
   const sessionList = (
-    <div className="chat-session-panel">
-      <Button type="primary" icon={<PlusOutlined />} block onClick={startNewChat} className="chat-new-btn">
+    <Flex vertical gap={10} style={{ height: '100%', minHeight: 0, padding: screens.md ? 12 : 8 }}>
+      <Button type="primary" icon={<PlusOutlined />} block onClick={startNewChat} size="large">
         New chat
       </Button>
-      <Spin spinning={sessionsLoading}>
+      <Spin spinning={sessionsLoading} style={{ flex: 1, minHeight: 0 }}>
         <List
-          className="chat-session-list"
           dataSource={sessions}
           locale={{ emptyText: 'No past chats yet' }}
-          renderItem={(item) => (
-            <List.Item
-              className={
-                item.session_id === currentSessionId ? 'chat-session-item is-active' : 'chat-session-item'
-              }
-              onClick={() => selectSession(item.session_id)}
-              actions={[
-                <Button
-                  key="del"
-                  type="text"
-                  size="small"
-                  danger
-                  icon={<DeleteOutlined />}
-                  onClick={(e) => deleteSession(item.session_id, e)}
-                  aria-label="Delete chat"
-                />,
-              ]}
-            >
-              <List.Item.Meta
-                title={<Text ellipsis>{item.title || 'Chat'}</Text>}
-                description={
-                  item.updated_at ? (
-                    <Text type="secondary" style={{ fontSize: 11 }}>
-                      {dayjs(item.updated_at).fromNow()}
-                    </Text>
-                  ) : null
-                }
-              />
-            </List.Item>
-          )}
+          style={{ maxHeight: screens.md ? 'calc(100vh - 200px)' : 'auto', overflowY: 'auto' }}
+          renderItem={(item) => {
+            const active = item.session_id === currentSessionId
+            return (
+              <List.Item
+                key={item.session_id}
+                onClick={() => selectSession(item.session_id)}
+                style={{
+                  cursor: 'pointer',
+                  padding: '10px 12px',
+                  marginBottom: 8,
+                  borderRadius: token.borderRadius,
+                  border: `1px solid ${active ? `${token.colorPrimary}55` : token.colorBorderSecondary}`,
+                  background: active ? `${token.colorPrimary}22` : token.colorFillQuaternary,
+                }}
+                actions={[
+                  <Button
+                    key="del"
+                    type="text"
+                    size="small"
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={(e) => deleteSession(item.session_id, e)}
+                    aria-label="Delete chat"
+                  />,
+                ]}
+              >
+                <List.Item.Meta
+                  title={<Text ellipsis>{item.title || 'Chat'}</Text>}
+                  description={
+                    item.updated_at ? (
+                      <Text type="secondary" style={{ fontSize: 11 }}>
+                        {dayjs(item.updated_at).fromNow()}
+                      </Text>
+                    ) : null
+                  }
+                />
+              </List.Item>
+            )
+          }}
         />
       </Spin>
-    </div>
+    </Flex>
   )
 
+  const bubbleBase = {
+    maxWidth: !screens.md ? 'calc(100% - 52px)' : 720,
+    padding: '12px 16px',
+    borderRadius: token.borderRadiusLG,
+    border: `1px solid ${token.colorBorderSecondary}`,
+  }
+
   return (
-    <Layout className="chat-shell">
+    <Layout
+      style={{
+        flex: 1,
+        minHeight: 0,
+        background: 'transparent',
+        overflow: 'hidden',
+      }}
+    >
       {screens.md ? (
-        <Sider width={280} className="chat-sider" theme="dark">
-          {sessionList}
+        <Sider
+          width={280}
+          theme="dark"
+          style={{
+            borderRight: `1px solid ${token.colorBorderSecondary}`,
+            overflow: 'hidden',
+          }}
+        >
+          <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>{sessionList}</div>
         </Sider>
       ) : (
-        <Drawer title="Chats" placement="left" width={300} open={historyOpen} onClose={() => setHistoryOpen(false)}>
+        <Drawer title="Chats" placement="left" width={320} open={historyOpen} onClose={() => setHistoryOpen(false)} styles={{ body: { padding: 0 } }}>
           {sessionList}
         </Drawer>
       )}
 
-      <Content className="chat-main">
-        <Flex justify="space-between" align="center" className="chat-toolbar" wrap="wrap" gap={8}>
-          <Flex gap={8} align="center">
+      <Content
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          minWidth: 0,
+          minHeight: 0,
+          overflow: 'hidden',
+          background: `${token.colorBgLayout}66`,
+          padding: screens.md ? '16px 24px 24px' : '12px 14px 16px',
+        }}
+      >
+        <Flex justify="space-between" align="center" wrap="wrap" gap={10} style={{ flexShrink: 0, marginBottom: 12, paddingBottom: 10, borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
+          <Flex gap={10} align="center" wrap="wrap">
             {!screens.md && (
               <Button icon={<MenuOutlined />} onClick={() => setHistoryOpen(true)}>
                 Chats
@@ -249,7 +287,15 @@ const ChatPage = () => {
           </Button>
         </Flex>
 
-        <div className="chat-messages">
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            padding: '8px 2px 16px',
+          }}
+        >
           {loadingSession ? (
             <Flex justify="center" align="center" style={{ minHeight: 200 }}>
               <Spin />
@@ -257,58 +303,64 @@ const ChatPage = () => {
           ) : messages.length === 0 && !loading ? (
             <Empty
               image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description={
-                <span>
-                  <Text type="secondary">Pick a chat from the sidebar or start a new one.</Text>
-                </span>
-              }
+              description={<Text type="secondary">Pick a chat from the sidebar or start a new one.</Text>}
             />
           ) : (
-            <Flex vertical gap="middle">
+            <Flex vertical gap={16}>
               {messages.map((item, idx) => (
                 <Flex
                   key={idx}
-                  gap="middle"
+                  gap={12}
                   align="flex-start"
                   justify={item.role === 'user' ? 'flex-end' : 'flex-start'}
-                  className={`chat-row chat-row--${item.role}`}
+                  style={{ width: '100%', flexDirection: item.role === 'user' ? 'row-reverse' : 'row' }}
                 >
                   {item.role === 'assistant' && (
                     <Avatar
                       size={36}
                       icon={<RobotOutlined />}
-                      className="chat-avatar chat-avatar--bot"
+                      style={{
+                        flexShrink: 0,
+                        background: `linear-gradient(145deg, ${token.colorPrimary}, ${token.colorInfo})`,
+                      }}
                     />
                   )}
-                  <div className={`chat-bubble chat-bubble--${item.role}`}>
-                    <Text strong className="chat-bubble-label">
+                  <div
+                    style={{
+                      ...bubbleBase,
+                      background:
+                        item.role === 'user'
+                          ? `linear-gradient(135deg, ${token.colorPrimary}55, ${token.colorPrimary}18)`
+                          : token.colorFillQuaternary,
+                      borderColor: item.role === 'user' ? `${token.colorPrimary}44` : token.colorBorderSecondary,
+                    }}
+                  >
+                    <Text strong style={{ display: 'block', fontSize: 11, opacity: 0.75, marginBottom: 6, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                       {item.role === 'user' ? 'You' : 'Assistant'}
                     </Text>
-                    <div className="chat-bubble-body">
-                      <Typography.Paragraph style={{ marginBottom: 0, whiteSpace: 'pre-wrap' }}>
-                        {item.role === 'assistant' ? getCleanAnswer(item.text) : item.text}
-                      </Typography.Paragraph>
-                      {item.role === 'assistant' && item.sources?.length > 0 && (
-                        <div className="chat-sources">
-                          <Tag color="purple">Sources</Tag>
-                          <Text type="secondary" style={{ fontSize: 12 }}>
-                            {item.sources.join(' · ')}
-                          </Text>
-                        </div>
-                      )}
-                    </div>
+                    <Typography.Paragraph style={{ marginBottom: 0, whiteSpace: 'pre-wrap', fontSize: 15, lineHeight: 1.55 }}>
+                      {item.role === 'assistant' ? getCleanAnswer(item.text) : item.text}
+                    </Typography.Paragraph>
+                    {item.role === 'assistant' && item.sources?.length > 0 && (
+                      <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px dashed ${token.colorBorderSecondary}` }}>
+                        <Tag color="purple">Sources</Tag>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          {item.sources.join(' · ')}
+                        </Text>
+                      </div>
+                    )}
                   </div>
                   {item.role === 'user' && (
-                    <Avatar size={36} icon={<UserOutlined />} className="chat-avatar chat-avatar--user" />
+                    <Avatar size={36} icon={<UserOutlined />} style={{ flexShrink: 0, background: token.colorFillSecondary }} />
                   )}
                 </Flex>
               ))}
               {loading && (
-                <Flex align="center" gap="small" className="chat-row chat-row--assistant">
-                  <Avatar size={36} icon={<RobotOutlined />} className="chat-avatar chat-avatar--bot" />
-                  <div className="chat-bubble chat-bubble--assistant">
-                    <Spin size="small" /> <Text type="secondary">Thinking…</Text>
-                  </div>
+                <Flex align="center" gap={12}>
+                    <Avatar size={36} icon={<RobotOutlined />} style={{ background: `linear-gradient(145deg, ${token.colorPrimary}, ${token.colorInfo})` }} />
+                  <Card size="small" styles={{ body: { padding: '10px 14px' } }} style={{ borderColor: token.colorBorderSecondary }}>
+                    <Spin size="small" /> <Text type="secondary"> Thinking…</Text>
+                  </Card>
                 </Flex>
               )}
               <div ref={listEndRef} />
@@ -316,7 +368,16 @@ const ChatPage = () => {
           )}
         </div>
 
-        <div className="chat-composer">
+        <Flex
+          gap={10}
+          align="flex-end"
+          wrap={!screens.md ? 'wrap' : 'nowrap'}
+          style={{
+            flexShrink: 0,
+            paddingTop: 12,
+            borderTop: `1px solid ${token.colorBorderSecondary}`,
+          }}
+        >
           <Input.TextArea
             autoSize={{ minRows: 1, maxRows: 6 }}
             placeholder="Message your documents… (Enter to send, Shift+Enter for newline)"
@@ -329,7 +390,7 @@ const ChatPage = () => {
               }
             }}
             disabled={loading}
-            className="chat-input"
+            style={{ flex: 1, minWidth: 0, fontSize: 15 }}
           />
           <Button
             type="primary"
@@ -337,11 +398,11 @@ const ChatPage = () => {
             icon={<SendOutlined />}
             loading={loading}
             onClick={send}
-            className="chat-send"
+            style={{ flexShrink: 0, width: !screens.md ? '100%' : 'auto' }}
           >
             Send
           </Button>
-        </div>
+        </Flex>
       </Content>
     </Layout>
   )

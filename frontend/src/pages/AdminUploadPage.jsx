@@ -1,10 +1,12 @@
-import { App, Button, Card, Typography, Upload } from 'antd'
-import { InboxOutlined, UploadOutlined } from '@ant-design/icons'
+import { App, Button, Card, Flex, Grid, Space, Typography, Upload, theme } from 'antd'
+import { CloudUploadOutlined, FileTextOutlined, InboxOutlined, UploadOutlined } from '@ant-design/icons'
 import { useState } from 'react'
 import api from '../api/client'
 
 const AdminUploadPage = () => {
   const { message } = App.useApp()
+  const { token } = theme.useToken()
+  const screens = Grid.useBreakpoint()
   const [fileList, setFileList] = useState([])
   const [loading, setLoading] = useState(false)
 
@@ -30,29 +32,57 @@ const AdminUploadPage = () => {
   }
 
   return (
-    <Card className="upload-card page-card">
-      <Typography.Title level={3}>Document upload</Typography.Title>
-      <Typography.Paragraph type="secondary">
-        Upload one or multiple files. Supported: txt, md, pdf, docx.
-      </Typography.Paragraph>
-
-      <Upload.Dragger
-        multiple
-        beforeUpload={() => false}
-        fileList={fileList}
-        onChange={({ fileList: next }) => setFileList(next)}
+    <Space direction="vertical" size={20} style={{ width: '100%' }}>
+      <Card
+        styles={{ body: { padding: screens.md ? 28 : 20 } }}
+        style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }}
       >
-        <p className="ant-upload-drag-icon">
-          <InboxOutlined />
-        </p>
-        <p className="ant-upload-text">Drag and drop files here, or click to browse</p>
-        <p className="ant-upload-hint">Files are indexed for chat in your workspace.</p>
-      </Upload.Dragger>
+        <Flex vertical gap={8}>
+          <Flex align="center" gap={12}>
+            <CloudUploadOutlined style={{ fontSize: 22, color: token.colorPrimary }} />
+            <Typography.Title level={3} style={{ margin: 0 }}>
+              Document upload
+            </Typography.Title>
+          </Flex>
+          <Typography.Paragraph type="secondary" style={{ marginBottom: 0, maxWidth: 640 }}>
+            Add knowledge to your workspace. Supported: txt, md, pdf, docx. Files are parsed, chunked, and indexed for
+            chat.
+          </Typography.Paragraph>
+        </Flex>
+      </Card>
 
-      <Button type="primary" icon={<UploadOutlined />} loading={loading} onClick={uploadFiles} style={{ marginTop: 16 }} size="large" block>
-        Upload and index
-      </Button>
-    </Card>
+      <Card style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }}>
+        <Upload.Dragger
+          multiple
+          beforeUpload={() => false}
+          fileList={fileList}
+          onChange={({ fileList: next }) => setFileList(next)}
+          style={{ background: token.colorFillQuaternary }}
+        >
+          <p className="ant-upload-drag-icon">
+            <InboxOutlined style={{ fontSize: 48, color: token.colorPrimary }} />
+          </p>
+          <p className="ant-upload-text" style={{ fontWeight: 600 }}>
+            Drag and drop files here, or click to browse
+          </p>
+          <p className="ant-upload-hint">
+            <FileTextOutlined style={{ marginRight: 6 }} />
+            Files stay in your tenant and power the assistant&apos;s answers.
+          </p>
+        </Upload.Dragger>
+        <Button
+          type="primary"
+          icon={<UploadOutlined />}
+          loading={loading}
+          onClick={uploadFiles}
+          size="large"
+          block
+          style={{ marginTop: 20, fontWeight: 600 }}
+        >
+          Upload and index
+        </Button>
+      </Card>
+    </Space>
   )
 }
 

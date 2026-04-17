@@ -1,10 +1,11 @@
-import { App, Button, Card, Popconfirm, Table, Typography } from 'antd'
-import { DeleteOutlined } from '@ant-design/icons'
+import { App, Button, Card, Flex, Popconfirm, Table, Typography, theme } from 'antd'
+import { DeleteOutlined, FolderOpenOutlined } from '@ant-design/icons'
 import { useCallback, useEffect, useState } from 'react'
 import api from '../api/client'
 
 const AdminDocumentsPage = () => {
   const { message } = App.useApp()
+  const { token } = theme.useToken()
   const [docs, setDocs] = useState([])
   const [loading, setLoading] = useState(false)
 
@@ -76,11 +77,18 @@ const AdminDocumentsPage = () => {
   ]
 
   return (
-    <Card className="upload-card page-card">
-      <Typography.Title level={3}>Documents</Typography.Title>
-      <Typography.Paragraph type="secondary">
-        Files in your workspace. Deleting removes the file, metadata, and vector index entries.
-      </Typography.Paragraph>
+    <Card style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }}>
+      <Flex vertical gap={10} style={{ marginBottom: 20 }}>
+        <Flex align="center" gap={12}>
+          <FolderOpenOutlined style={{ fontSize: 22, color: token.colorPrimary }} />
+          <Typography.Title level={3} style={{ margin: 0 }}>
+            Documents
+          </Typography.Title>
+        </Flex>
+        <Typography.Paragraph type="secondary" style={{ marginBottom: 0, maxWidth: 720 }}>
+          Files in your workspace. Deleting removes the file, metadata, and vector index entries.
+        </Typography.Paragraph>
+      </Flex>
       <Table rowKey="doc_id" loading={loading} columns={columns} dataSource={docs} scroll={{ x: true }} />
     </Card>
   )

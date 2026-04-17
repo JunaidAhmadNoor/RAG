@@ -1,4 +1,4 @@
-import { Button, Drawer, Grid, Layout, Menu, Typography } from 'antd'
+import { Avatar, Button, Divider, Drawer, Flex, Grid, Layout, Menu, Space, Tag, theme, Tooltip, Typography } from 'antd'
 import {
   CrownOutlined,
   FileAddOutlined,
@@ -7,9 +7,10 @@ import {
   MenuOutlined,
   MessageOutlined,
   TeamOutlined,
+  UserOutlined,
 } from '@ant-design/icons'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { authStore } from '../store/authStore'
 
 const { Header, Content } = Layout
@@ -18,6 +19,7 @@ const AppLayout = ({ children, fullBleed = false, variant = 'default' }) => {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const screens = Grid.useBreakpoint()
+  const { token } = theme.useToken()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const { role, username, canUpload, logout } = authStore()
 
@@ -42,62 +44,197 @@ const AppLayout = ({ children, fullBleed = false, variant = 'default' }) => {
     {
       key: '/superadmin',
       icon: <CrownOutlined />,
-      label: <Link to="/superadmin">Platform console</Link>,
+      label: <Link to="/superadmin">Platform</Link>,
     },
   ]
 
   const items = variant === 'superadmin' ? superItems : defaultItems
-  const brandTitle = variant === 'superadmin' ? 'Platform admin' : 'RAG Assistant'
-  const shellClass =
-    fullBleed && variant !== 'superadmin'
-      ? 'app-shell app-shell--fill'
-      : variant === 'superadmin'
-        ? 'app-shell app-shell--super'
-        : 'app-shell'
+  const brandTitle = variant === 'superadmin' ? 'Platform console' : 'RAG Workspace'
+  const contentMax = variant === 'superadmin' ? 1200 : 1040
+
+  const shellStyle = useMemo(() => {
+    const base = {
+      minHeight: '100vh',
+      background: 'transparent',
+      display: 'flex',
+      flexDirection: 'column',
+    }
+    if (fullBleed && variant !== 'superadmin') {
+      return { ...base, height: '100vh', maxHeight: '100vh', overflow: 'hidden' }
+    }
+    return base
+  }, [fullBleed, variant])
+
+  const headerBarStyle = useMemo(
+    () => ({
+      position: 'sticky',
+      top: 0,
+      zIndex: 100,
+      height: 64,
+      padding: 0,
+      lineHeight: 'normal',
+      display: 'flex',
+      alignItems: 'center',
+      borderBottom: `1px solid ${token.colorBorderSecondary}`,
+      background: token.Layout?.headerBg || token.colorBgElevated,
+      backdropFilter: 'blur(12px)',
+    }),
+    [token],
+  )
 
   const menuProps = {
     mode: 'horizontal',
     selectedKeys: [pathname],
     items,
-    className: 'top-menu',
+    theme: 'dark',
+    style: {
+      flex: '0 1 auto',
+      minWidth: 0,
+      borderBottom: 'none',
+      background: 'transparent',
+      lineHeight: '62px',
+      justifyContent: 'center',
+    },
     onClick: () => setDrawerOpen(false),
   }
 
-  return (
-    <Layout className={shellClass}>
-      <Header className="app-header">
-        {!screens.md && (
-          <Button
-            type="text"
-            icon={<MenuOutlined />}
-            onClick={() => setDrawerOpen(true)}
-            aria-label="Open menu"
-            className="nav-trigger"
-          />
-        )}
-        <Typography.Title level={4} className="app-brand">
-          {brandTitle}
-        </Typography.Title>
-        {screens.md ? (
-          <Menu {...menuProps} style={{ flex: 1 }} />
-        ) : (
-          <span style={{ flex: 1 }} />
-        )}
-        <div className="header-right">
-          <Typography.Text className="header-user" ellipsis>
+  const innerPadding = screens.lg ? 32 : screens.md ? 24 : 14
+
+  const brandDesktop = (
+    <Space align="center" size={8} style={{ flexShrink: 0 }}>
+      {variant === 'superadmin' ? (
+        <Tag icon={<CrownOutlined />} color="gold" style={{ margin: 0 }}>
+          Super
+        </Tag>
+      ) : null}
+      <Typography.Text
+        strong
+        style={{
+          fontSize: 17,
+          letterSpacing: '-0.02em',
+          color: token.colorText,
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {brandTitle}
+      </Typography.Text>
+    </Space>
+  )
+
+  const brandMobile = (
+    <Flex align="center" gap={8} style={{ flex: 1, minWidth: 0 }}>
+      {variant === 'superadmin' ? (
+        <Tag icon={<CrownOutlined />} color="gold" style={{ margin: 0, flexShrink: 0 }}>
+          Super
+        </Tag>
+      ) : null}
+      <Typography.Text
+        strong
+        ellipsis={{ tooltip: brandTitle }}
+        style={{
+          fontSize: 15,
+          letterSpacing: '-0.02em',
+          color: token.colorText,
+          flex: 1,
+          minWidth: 0,
+        }}
+      >
+        {brandTitle}
+      </Typography.Text>
+    </Flex>
+  )
+
+  const userRail = (
+    <Flex align="center" gap={12} style={{ flexShrink: 0 }}>
+      {screens.md ? <Divider type="vertical" style={{ height: 28, margin: 0, borderColor: token.colorBorder }} /> : null}
+      <Space size={10} align="center">
+        <Tooltip title={username || 'User'}>
+          <Avatar size={36} icon={<UserOutlined />} style={{ background: token.colorPrimary }} />
+        </Tooltip>
+        {screens.sm ? (
+          <Typography.Text ellipsis style={{ maxWidth: screens.md ? 220 : 140, color: token.colorTextSecondary, fontSize: 13 }}>
             {username || 'User'}
           </Typography.Text>
-          <Button
-            icon={<LogoutOutlined />}
-            title="Logout"
-            onClick={() => {
-              logout()
-              navigate('/login')
-            }}
-          >
-            {screens.sm ? 'Logout' : null}
-          </Button>
-        </div>
+        ) : null}
+      </Space>
+      <Button
+        type="default"
+        icon={<LogoutOutlined />}
+        onClick={() => {
+          logout()
+          navigate('/login')
+        }}
+        style={{
+          borderColor: token.colorBorder,
+          background: token.colorFillQuaternary,
+        }}
+      >
+        {screens.sm ? 'Logout' : ''}
+      </Button>
+    </Flex>
+  )
+
+  return (
+    <Layout className={fullBleed && variant !== 'superadmin' ? 'app-shell--fill' : undefined} style={shellStyle}>
+      <Header style={headerBarStyle}>
+        <Flex
+          align="center"
+          justify={screens.md ? 'space-between' : 'flex-start'}
+          style={{
+            width: '100%',
+            maxWidth: contentMax,
+            margin: '0 auto',
+            paddingInline: innerPadding,
+            height: '100%',
+            gap: screens.md ? 20 : 10,
+          }}
+        >
+          {!screens.md && (
+            <Button
+              type="text"
+              icon={<MenuOutlined />}
+              onClick={() => setDrawerOpen(true)}
+              aria-label="Open menu"
+              style={{ flexShrink: 0 }}
+            />
+          )}
+
+          {screens.md ? (
+            <>
+              {brandDesktop}
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: 24,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                }}
+              >
+                <Menu {...menuProps} />
+              </div>
+              {userRail}
+            </>
+          ) : (
+            <>
+              {brandMobile}
+              <Flex style={{ marginLeft: 'auto', flexShrink: 0 }} align="center" gap={8}>
+                <Tooltip title={username || 'User'}>
+                  <Avatar size="small" icon={<UserOutlined />} style={{ background: token.colorPrimary }} />
+                </Tooltip>
+                <Button
+                  type="default"
+                  size="small"
+                  icon={<LogoutOutlined />}
+                  onClick={() => {
+                    logout()
+                    navigate('/login')
+                  }}
+                />
+              </Flex>
+            </>
+          )}
+        </Flex>
       </Header>
       <Drawer
         title="Navigate"
@@ -105,11 +242,25 @@ const AppLayout = ({ children, fullBleed = false, variant = 'default' }) => {
         onClose={() => setDrawerOpen(false)}
         open={drawerOpen}
         width={280}
-        className="nav-drawer"
+        styles={{ body: { paddingTop: 8 } }}
       >
         <Menu mode="inline" selectedKeys={[pathname]} items={items} onClick={() => setDrawerOpen(false)} />
       </Drawer>
-      <Content className={fullBleed ? 'page-content page-content--bleed' : 'page-content'}>{children}</Content>
+      <Content
+        className={fullBleed ? 'page-content--bleed' : undefined}
+        style={
+          fullBleed
+            ? undefined
+            : {
+                maxWidth: contentMax,
+                width: '100%',
+                margin: '0 auto',
+                padding: screens.md ? 24 : 16,
+              }
+        }
+      >
+        {children}
+      </Content>
     </Layout>
   )
 }

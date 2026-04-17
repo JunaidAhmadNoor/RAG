@@ -2,18 +2,25 @@ import {
   App,
   Button,
   Card,
+  Col,
+  Descriptions,
   Drawer,
+  Flex,
   Form,
+  Grid,
   Input,
+  List,
   Modal,
+  Row,
   Space,
   Statistic,
   Switch,
   Table,
   Tag,
   Typography,
+  theme,
 } from 'antd'
-import { PlusOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons'
+import { CrownOutlined, PlusOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import api from '../api/client'
 
@@ -21,6 +28,9 @@ const { Title, Paragraph, Text } = Typography
 
 const SuperAdminDashboard = () => {
   const { message } = App.useApp()
+  const { token } = theme.useToken()
+  const screens = Grid.useBreakpoint()
+  const isMobile = !screens.md
   const [admins, setAdmins] = useState([])
   const [loading, setLoading] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -98,141 +108,257 @@ const SuperAdminDashboard = () => {
     }
   }
 
-  const columns = [
+  const tableColumns = [
     {
       title: 'Admin',
       dataIndex: 'username',
       key: 'username',
+      width: 220,
+      ellipsis: true,
       render: (v) => (
-        <Space>
-          <UserOutlined />
-          <Text strong>{v}</Text>
-        </Space>
+        <Flex align="center" gap={8} style={{ maxWidth: '100%', minWidth: 0 }}>
+          <UserOutlined style={{ flexShrink: 0 }} />
+          <Text strong ellipsis style={{ flex: 1, minWidth: 0 }}>
+            {v}
+          </Text>
+        </Flex>
       ),
     },
     {
       title: 'Status',
       key: 'is_active',
-      width: 120,
+      width: 110,
       render: (_, r) => (r.is_active !== false ? <Tag color="green">Active</Tag> : <Tag color="red">Suspended</Tag>),
     },
     {
-      title: 'Team users',
+      title: 'Team',
       dataIndex: 'team_user_count',
       key: 'team_user_count',
-      width: 110,
+      width: 88,
     },
     {
-      title: 'Documents',
+      title: 'Docs',
       dataIndex: 'document_count',
       key: 'document_count',
-      width: 110,
+      width: 80,
     },
     {
       title: 'Created',
       dataIndex: 'created_at',
       key: 'created_at',
-      responsive: ['md'],
+      width: 180,
+      ellipsis: true,
       render: (v) => (v ? new Date(v).toLocaleString() : '—'),
     },
     {
       title: 'Actions',
       key: 'actions',
-      width: 280,
+      width: 200,
+      fixed: 'right',
       render: (_, record) => (
-        <Space wrap>
-          <Button type="link" icon={<TeamOutlined />} onClick={() => openTeamDrawer(record)}>
-            View team
+        <Space wrap size={[8, 8]}>
+          <Button type="link" icon={<TeamOutlined />} onClick={() => openTeamDrawer(record)} style={{ padding: 0 }}>
+            Team
           </Button>
-          <Space size="small">
-            <Text type="secondary">Active</Text>
-            <Switch checked={record.is_active !== false} onChange={(c) => toggleActive(record, c)} />
-          </Space>
+          <Flex align="center" gap={6} wrap="nowrap">
+            <Text type="secondary">On</Text>
+            <Switch size="small" checked={record.is_active !== false} onChange={(c) => toggleActive(record, c)} />
+          </Flex>
         </Space>
       ),
     },
   ]
 
+  const adminCards = (
+    <List
+      loading={loading}
+      dataSource={admins}
+      locale={{ emptyText: 'No admins yet' }}
+      split={false}
+      renderItem={(record) => (
+        <List.Item key={record.username} style={{ padding: '0 0 12px', border: 'none' }}>
+          <Card size="small" style={{ width: '100%', borderColor: token.colorBorderSecondary }} styles={{ body: { padding: 14 } }}>
+            <Flex vertical gap={12}>
+              <Flex justify="space-between" align="flex-start" gap={10}>
+                <Text strong ellipsis style={{ flex: 1, minWidth: 0, fontSize: 15 }}>
+                  {record.username}
+                </Text>
+                {record.is_active !== false ? <Tag color="green">Active</Tag> : <Tag color="red">Suspended</Tag>}
+              </Flex>
+              <Row gutter={[10, 10]}>
+                <Col span={12}>
+                  <Card size="small" type="inner" styles={{ body: { padding: '8px 10px' } }}>
+                    <Statistic title="Team users" value={record.team_user_count ?? 0} valueStyle={{ fontSize: 18 }} />
+                  </Card>
+                </Col>
+                <Col span={12}>
+                  <Card size="small" type="inner" styles={{ body: { padding: '8px 10px' } }}>
+                    <Statistic title="Documents" value={record.document_count ?? 0} valueStyle={{ fontSize: 18 }} />
+                  </Card>
+                </Col>
+              </Row>
+              {record.created_at ? (
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  Created {new Date(record.created_at).toLocaleString()}
+                </Text>
+              ) : null}
+              <Button block type="primary" ghost icon={<TeamOutlined />} onClick={() => openTeamDrawer(record)}>
+                View team
+              </Button>
+              <Flex justify="space-between" align="center" wrap="nowrap" gap={12}>
+                <Text type="secondary">Workspace active</Text>
+                <Switch checked={record.is_active !== false} onChange={(c) => toggleActive(record, c)} />
+              </Flex>
+            </Flex>
+          </Card>
+        </List.Item>
+      )}
+    />
+  )
+
+  const teamDrawerContent = isMobile ? (
+    <List
+      loading={teamLoading}
+      dataSource={teamUsers}
+      locale={{ emptyText: 'No team users' }}
+      split={false}
+      renderItem={(u) => (
+        <List.Item key={u.username} style={{ padding: '0 0 10px', border: 'none' }}>
+          <Card size="small" style={{ width: '100%' }} styles={{ body: { padding: 12 } }}>
+            <Descriptions column={1} size="small" styles={{ label: { width: 100 } }}>
+              <Descriptions.Item label="Username">
+                <Text ellipsis>{u.username}</Text>
+              </Descriptions.Item>
+              <Descriptions.Item label="Can upload">{u.can_upload ? 'Yes' : 'No'}</Descriptions.Item>
+              <Descriptions.Item label="Joined">{u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</Descriptions.Item>
+            </Descriptions>
+          </Card>
+        </List.Item>
+      )}
+    />
+  ) : (
+    <Table
+      size="small"
+      loading={teamLoading}
+      rowKey="username"
+      pagination={false}
+      dataSource={teamUsers}
+      scroll={{ x: 420 }}
+      columns={[
+        { title: 'Username', dataIndex: 'username', key: 'u', ellipsis: true },
+        {
+          title: 'Can upload',
+          dataIndex: 'can_upload',
+          key: 'cu',
+          width: 100,
+          render: (v) => (v ? 'Yes' : 'No'),
+        },
+        {
+          title: 'Joined',
+          dataIndex: 'created_at',
+          key: 'ca',
+          width: 120,
+          render: (v) => (v ? new Date(v).toLocaleDateString() : '—'),
+        },
+      ]}
+    />
+  )
+
   return (
-    <div className="superadmin-page">
-      <div className="superadmin-header">
-        <div>
-          <Title level={3} style={{ marginBottom: 4 }}>
-            Platform overview
-          </Title>
-          <Paragraph type="secondary" style={{ marginBottom: 0 }}>
-            Manage admin accounts, inspect team users (read-only), and suspend access. Team users cannot be deleted
-            from this console.
-          </Paragraph>
-        </div>
-        <Button type="primary" icon={<PlusOutlined />} size="large" onClick={() => setCreateOpen(true)}>
-          New admin
-        </Button>
-      </div>
+    <Space direction="vertical" size={24} style={{ width: '100%' }}>
+      <Card
+        style={{
+          borderColor: token.colorBorderSecondary,
+          background: `linear-gradient(135deg, ${token.colorPrimary}18, ${token.colorBgContainer})`,
+        }}
+        styles={{ body: { padding: screens.md ? 28 : 16 } }}
+      >
+        <Flex justify="space-between" align="flex-start" gap={16} wrap="wrap">
+          <Space align="start" size={14} wrap>
+            <Flex
+              align="center"
+              justify="center"
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: token.borderRadiusLG,
+                background: `${token.colorWarning}22`,
+                border: `1px solid ${token.colorWarning}44`,
+                flexShrink: 0,
+              }}
+            >
+              <CrownOutlined style={{ fontSize: 22, color: token.colorWarning }} />
+            </Flex>
+            <div style={{ minWidth: 0 }}>
+              <Title level={isMobile ? 4 : 3} style={{ marginBottom: 6 }}>
+                Platform overview
+              </Title>
+              <Paragraph type="secondary" style={{ marginBottom: 0, maxWidth: 640 }}>
+                Manage admin accounts, inspect team users (read-only), and suspend access. Team users cannot be deleted
+                from this console.
+              </Paragraph>
+            </div>
+          </Space>
+          <Button type="primary" icon={<PlusOutlined />} size="large" onClick={() => setCreateOpen(true)} style={{ fontWeight: 600 }} block={isMobile}>
+            New admin
+          </Button>
+        </Flex>
+      </Card>
 
-      <Space wrap size="large" className="superadmin-stats">
-        <Card size="small" className="superadmin-stat-card">
-          <Statistic title="Admins" value={totals.admins} />
-        </Card>
-        <Card size="small" className="superadmin-stat-card">
-          <Statistic title="Team users (all workspaces)" value={totals.team} />
-        </Card>
-        <Card size="small" className="superadmin-stat-card">
-          <Statistic title="Indexed documents (all)" value={totals.docs} />
-        </Card>
-      </Space>
+      <Row gutter={[12, 12]}>
+        <Col xs={24} sm={8}>
+          <Card size="small" style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }}>
+            <Statistic title="Admins" value={totals.admins} valueStyle={{ color: token.colorText }} />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card size="small" style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }}>
+            <Statistic
+              title={isMobile ? 'Team users (all)' : 'Team users (all workspaces)'}
+              value={totals.team}
+              valueStyle={{ color: token.colorText }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card size="small" style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }}>
+            <Statistic title={isMobile ? 'Documents (all)' : 'Indexed documents (all)'} value={totals.docs} valueStyle={{ color: token.colorText }} />
+          </Card>
+        </Col>
+      </Row>
 
-      <Card className="page-card superadmin-table-card">
-        <Table
-          rowKey="username"
-          loading={loading}
-          columns={columns}
-          dataSource={admins}
-          pagination={{ pageSize: 8 }}
-          scroll={{ x: true }}
-        />
+      <Card style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }} styles={{ body: isMobile ? { padding: 12 } : undefined }}>
+        {isMobile ? (
+          adminCards
+        ) : (
+          <div style={{ width: '100%', overflowX: 'auto' }}>
+            <Table
+              rowKey="username"
+              loading={loading}
+              columns={tableColumns}
+              dataSource={admins}
+              pagination={{ pageSize: 8, showSizeChanger: false }}
+              scroll={{ x: 960 }}
+              tableLayout="fixed"
+            />
+          </div>
+        )}
       </Card>
 
       <Drawer
         title={selectedAdmin ? `Team — ${selectedAdmin.username}` : 'Team'}
-        width={400}
+        width={screens.md ? 420 : '100%'}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
+        styles={{ body: { paddingTop: 8 } }}
       >
         <Paragraph type="secondary" style={{ marginTop: 0 }}>
           Read-only list. Deleting users is reserved for each workspace admin.
         </Paragraph>
-        <Table
-          size="small"
-          loading={teamLoading}
-          rowKey="username"
-          pagination={false}
-          dataSource={teamUsers}
-          columns={[
-            { title: 'Username', dataIndex: 'username', key: 'u' },
-            {
-              title: 'Can upload',
-              dataIndex: 'can_upload',
-              key: 'cu',
-              render: (v) => (v ? 'Yes' : 'No'),
-            },
-            {
-              title: 'Joined',
-              dataIndex: 'created_at',
-              key: 'ca',
-              render: (v) => (v ? new Date(v).toLocaleDateString() : '—'),
-            },
-          ]}
-        />
+        {teamDrawerContent}
       </Drawer>
 
-      <Modal
-        title="Create admin workspace"
-        open={createOpen}
-        onCancel={() => setCreateOpen(false)}
-        footer={null}
-        destroyOnClose
-      >
+      <Modal title="Create admin workspace" open={createOpen} onCancel={() => setCreateOpen(false)} footer={null} destroyOnClose>
         <Form form={form} layout="vertical" onFinish={onCreateAdmin}>
           <Form.Item label="Username" name="username" rules={[{ required: true, min: 3 }]}>
             <Input placeholder="new_admin" />
@@ -240,12 +366,12 @@ const SuperAdminDashboard = () => {
           <Form.Item label="Password" name="password" rules={[{ required: true, min: 6 }]}>
             <Input.Password />
           </Form.Item>
-          <Button type="primary" htmlType="submit" loading={createLoading} block>
+          <Button type="primary" htmlType="submit" loading={createLoading} block size="large" style={{ fontWeight: 600 }}>
             Create admin
           </Button>
         </Form>
       </Modal>
-    </div>
+    </Space>
   )
 }
 

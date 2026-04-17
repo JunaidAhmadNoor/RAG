@@ -1,10 +1,12 @@
-import { App, Button, Card, Form, Input, Popconfirm, Space, Switch, Table, Typography } from 'antd'
-import { DeleteOutlined } from '@ant-design/icons'
+import { App, Button, Card, Col, Flex, Form, Grid, Input, Popconfirm, Row, Space, Switch, Table, Typography, theme } from 'antd'
+import { DeleteOutlined, TeamOutlined, UserAddOutlined } from '@ant-design/icons'
 import { useCallback, useEffect, useState } from 'react'
 import api from '../api/client'
 
 const AdminUsersPage = () => {
   const { message } = App.useApp()
+  const { token } = theme.useToken()
+  const screens = Grid.useBreakpoint()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(false)
   const [form] = Form.useForm()
@@ -68,14 +70,13 @@ const AdminUsersPage = () => {
       title: 'Can upload',
       dataIndex: 'can_upload',
       key: 'can_upload',
-      render: (_, record) => (
-        <Switch checked={record.can_upload} onChange={(c) => onToggleUpload(record.username, c)} />
-      ),
+      render: (_, record) => <Switch checked={record.can_upload} onChange={(c) => onToggleUpload(record.username, c)} />,
     },
     {
       title: 'Created',
       dataIndex: 'created_at',
       key: 'created_at',
+      responsive: ['md'],
       render: (v) => (v ? new Date(v).toLocaleString() : '—'),
     },
     {
@@ -100,43 +101,60 @@ const AdminUsersPage = () => {
   ]
 
   return (
-    <Card className="upload-card page-card">
-      <Typography.Title level={3}>Team users</Typography.Title>
-      <Typography.Paragraph type="secondary">
-        Create users under your workspace. Toggle upload to let them add documents. Delete removes the user and their
-        chats.
-      </Typography.Paragraph>
+    <Space direction="vertical" size={20} style={{ width: '100%' }}>
+      <Card style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }} styles={{ body: { padding: screens.md ? 28 : 20 } }}>
+        <Flex vertical gap={8}>
+          <Flex align="center" gap={12} wrap="wrap">
+            <TeamOutlined style={{ fontSize: 22, color: token.colorPrimary }} />
+            <Typography.Title level={3} style={{ margin: 0 }}>
+              Team users
+            </Typography.Title>
+          </Flex>
+          <Typography.Paragraph type="secondary" style={{ marginBottom: 0, maxWidth: 720 }}>
+            Create users under your workspace. Toggle upload to let them add documents. Delete removes the user and
+            their chats.
+          </Typography.Paragraph>
+        </Flex>
+      </Card>
 
-      <Card size="small" title="Add user" className="inner-card" style={{ marginBottom: 24 }}>
+      <Card
+        size="small"
+        title={
+          <Space>
+            <UserAddOutlined />
+            <span>Add user</span>
+          </Space>
+        }
+        style={{ borderColor: token.colorBorderSecondary, background: token.colorFillQuaternary }}
+      >
         <Form form={form} layout="vertical" onFinish={onCreate} initialValues={{ can_upload: false }}>
-          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-            <Space wrap style={{ width: '100%' }} align="start">
-              <Form.Item label="Username" name="username" rules={[{ required: true }]} style={{ minWidth: 200, flex: 1 }}>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12} md={10}>
+              <Form.Item label="Username" name="username" rules={[{ required: true }]} style={{ marginBottom: 0 }}>
                 <Input placeholder="team_member" />
               </Form.Item>
-              <Form.Item label="Password" name="password" rules={[{ required: true, min: 6 }]} style={{ minWidth: 200, flex: 1 }}>
+            </Col>
+            <Col xs={24} sm={12} md={10}>
+              <Form.Item label="Password" name="password" rules={[{ required: true, min: 6 }]} style={{ marginBottom: 0 }}>
                 <Input.Password placeholder="••••••" />
               </Form.Item>
-              <Form.Item label="Can upload documents" name="can_upload" valuePropName="checked">
+            </Col>
+            <Col xs={24} md={4}>
+              <Form.Item label="Can upload" name="can_upload" valuePropName="checked" style={{ marginBottom: 0 }}>
                 <Switch />
               </Form.Item>
-            </Space>
-            <Button type="primary" htmlType="submit">
-              Create user
-            </Button>
-          </Space>
+            </Col>
+          </Row>
+          <Button type="primary" htmlType="submit" style={{ marginTop: 16 }}>
+            Create user
+          </Button>
         </Form>
       </Card>
 
-      <Table
-        rowKey="username"
-        loading={loading}
-        columns={columns}
-        dataSource={users}
-        pagination={false}
-        scroll={{ x: true }}
-      />
-    </Card>
+      <Card style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }}>
+        <Table rowKey="username" loading={loading} columns={columns} dataSource={users} pagination={false} scroll={{ x: true }} />
+      </Card>
+    </Space>
   )
 }
 
