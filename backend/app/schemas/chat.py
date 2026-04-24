@@ -16,3 +16,7 @@ class ChatResponse(BaseModel):
 class NewSessionResponse(BaseModel):
     session_id: str
     title: str
+
+
+class RenameSessionRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=120)

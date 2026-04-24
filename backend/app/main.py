@@ -1,4 +1,3 @@
-import logging
 import re
 from contextlib import asynccontextmanager
 
@@ -13,20 +12,10 @@ from app.api.super_admin import router as super_admin_router
 from app.core.config import settings
 from app.services.super_admin_service import bootstrap_superadmin_if_configured
 
-_log = logging.getLogger(__name__)
-
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     bootstrap_superadmin_if_configured()
-    ou = settings.ollama_base_url
-    _log.warning("OLLAMA_BASE_URL effective value: %s", ou)
-    if "${{" in ou or "{{" in ou:
-        _log.error(
-            "OLLAMA_BASE_URL still contains a template — Railway did not substitute it. "
-            "Use the Variables UI 'Reference' picker for Ollama → RAILWAY_PRIVATE_DOMAIN, "
-            "or set OLLAMA_BASE_URL to the Ollama TCP proxy URL (http://HOST:PORT)."
-        )
     yield
 
 

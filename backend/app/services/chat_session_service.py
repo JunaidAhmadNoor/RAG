@@ -105,3 +105,19 @@ def set_title_if_new(session_id: str, username: str, user_first_line: str) -> No
         {"session_id": session_id, "username": username},
         {"$set": {"title": title or "Chat", "updated_at": _now()}},
     )
+
+
+def rename_session(session_id: str, username: str, title: str) -> None:
+    assert_session_owner(session_id, username)
+    clean = " ".join(title.strip().split())
+    if not clean:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Chat title cannot be empty",
+        )
+    if len(clean) > 120:
+        clean = clean[:117] + "..."
+    chat_sessions_collection.update_one(
+        {"session_id": session_id, "username": username},
+        {"$set": {"title": clean, "updated_at": _now()}},
+    )

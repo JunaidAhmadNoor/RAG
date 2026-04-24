@@ -1,13 +1,19 @@
 from fastapi import APIRouter, Depends
 
 from app.core.deps import get_current_user
-from app.schemas.chat import ChatRequest, ChatResponse, NewSessionResponse
+from app.schemas.chat import (
+    ChatRequest,
+    ChatResponse,
+    NewSessionResponse,
+    RenameSessionRequest,
+)
 from app.services.chat_session_service import (
     append_turn,
     assert_session_owner,
     create_session,
     delete_session,
     list_sessions_for_user,
+    rename_session,
     set_title_if_new,
 )
 from app.services.rag_service import ask_rag
@@ -34,6 +40,16 @@ def get_session_detail(session_id: str, current_user=Depends(get_current_user)):
 @router.delete("/sessions/{session_id}", status_code=204)
 def remove_session(session_id: str, current_user=Depends(get_current_user)):
     delete_session(session_id, current_user["username"])
+
+
+@router.patch("/sessions/{session_id}")
+def rename_chat_session(
+    session_id: str,
+    payload: RenameSessionRequest,
+    current_user=Depends(get_current_user),
+):
+    rename_session(session_id, current_user["username"], payload.title)
+    return {"message": "Chat renamed"}
 
 
 @router.post("", response_model=ChatResponse)

@@ -1,12 +1,9 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import logging
 import re
 from datetime import UTC, datetime
-from urllib import request
-from urllib.error import URLError
 from pathlib import Path
 from uuid import uuid4
 
@@ -162,8 +159,15 @@ def _deduplicate_chunks(
     """
     kept_docs: list[str] = []
     kept_meta: list[dict] = []
+    seen_chunk_hashes: set[str] = set()
 
     for doc, meta in zip(docs, metadatas):
+        chunk_hash = (meta or {}).get("chunk_hash")
+        if chunk_hash:
+            if chunk_hash in seen_chunk_hashes:
+                continue
+            seen_chunk_hashes.add(chunk_hash)
+
         doc_words = set(re.findall(r"[a-zA-Z0-9]+", doc.lower()))
         is_duplicate = False
         for existing in kept_docs:
@@ -201,14 +205,46 @@ def _rerank_retrieval(
     distances: list[float],
     top_k: int,
 ) -> tuple[list[str], list[dict]]:
+    now = datetime.now(UTC)
+    duplicate_counter: dict[str, int] = {}
+    for metadata in metadatas:
+        key = ""
+        if metadata:
+            key = metadata.get("chunk_hash") or metadata.get("doc_content_hash") or ""
+        if key:
+            duplicate_counter[key] = duplicate_counter.get(key, 0) + 1
+
     combined: list[tuple[float, str, dict]] = []
     for idx, doc in enumerate(docs):
         metadata = metadatas[idx] if idx < len(metadatas) else {}
         distance = distances[idx] if idx < len(distances) else 1.0
         semantic_score = 1.0 / (1.0 + max(distance, 0.0))
         lexical_score = _keyword_overlap_score(question, doc)
+        # Prefer recently indexed documents (fresh docs should outrank stale copies).
+        recency_score = 0.0
+        created_at = metadata.get("doc_created_at") if isinstance(metadata, dict) else None
+        if isinstance(created_at, datetime):
+            if created_at.tzinfo is None:
+                # Some Mongo records may be naive datetimes; treat them as UTC.
+                created_at = created_at.replace(tzinfo=UTC)
+            age_days = max((now - created_at).days, 0)
+            recency_score = max(0.0, 1.0 - (age_days / 365.0))
+
+        duplicate_key = ""
+        if isinstance(metadata, dict):
+            duplicate_key = metadata.get("chunk_hash") or metadata.get("doc_content_hash") or ""
+        duplicate_penalty = 0.0
+        if duplicate_key:
+            duplicate_count = duplicate_counter.get(duplicate_key, 1)
+            duplicate_penalty = min(0.12, max(0, duplicate_count - 1) * 0.04)
+
         # Weighted hybrid ranking: semantic first, lexical second.
-        final_score = (0.72 * semantic_score) + (0.28 * lexical_score)
+        final_score = (
+            (0.62 * semantic_score)
+            + (0.25 * lexical_score)
+            + (0.13 * recency_score)
+            - duplicate_penalty
+        )
         combined.append((final_score, doc, metadata))
 
     combined.sort(key=lambda x: x[0], reverse=True)
@@ -277,39 +313,33 @@ def _truncate_context(context: str, max_chars: int = _MAX_CONTEXT_CHARS) -> str:
     return context[:max_chars] + "\n\n[...context truncated...]"
 
 
-def _ask_ollama(question: str, context: str) -> str | None:
-    payload = {
-        "model": settings.ollama_model,
-        "prompt": _build_prompt(question, _truncate_context(context)),
-        "stream": False,
-        "options": {"temperature": 0.2},
-    }
-    body = json.dumps(payload).encode("utf-8")
-    req = request.Request(
-        url=f"{settings.ollama_base_url.rstrip('/')}/api/generate",
-        data=body,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    try:
-        with request.urlopen(req, timeout=90) as response:
-            raw = response.read().decode("utf-8")
-            result = json.loads(raw)
-            text = (result.get("response") or "").strip()
-            return text or None
-    except (URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
-        base = settings.ollama_base_url.rstrip("/")
-        logger.warning("Ollama /api/generate failed (base=%s model=%s): %s", base, settings.ollama_model, exc)
-        return None
+def _normalize_text_for_hashing(text: str) -> str:
+    return re.sub(r"\s+", " ", text.strip().lower())
 
 
-def _ask_openai(question: str, context: str) -> str | None:
-    if not settings.openai_api_key:
+def _sha256_hexdigest(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _resolve_chat_api_config() -> tuple[str | None, str | None, str | None]:
+    provider = settings.llm_provider.lower().strip()
+    if provider == "groq":
+        return settings.llm_api_key, settings.llm_base_url, settings.llm_model
+    if provider == "openai":
+        api_key = settings.llm_api_key or settings.openai_api_key
+        model = settings.llm_model or settings.openai_model
+        return api_key, settings.llm_base_url, model
+    return None, None, None
+
+
+def _ask_openai_compatible(question: str, context: str) -> str | None:
+    api_key, base_url, model = _resolve_chat_api_config()
+    if not api_key or not model:
         return None
     try:
-        client = OpenAI(api_key=settings.openai_api_key)
+        client = OpenAI(api_key=api_key, base_url=base_url)
         completion = client.chat.completions.create(
-            model=settings.openai_model,
+            model=model,
             messages=[
                 {
                     "role": "system",
@@ -365,9 +395,25 @@ def _allowed_filenames_for_user(current_user: dict | None) -> list[str]:
     tenant_id = _tenant_id_for_user(current_user)
     if not tenant_id:
         return []
-    query = {"owner_admin": tenant_id} if current_user else {}
-    docs = documents_collection.find(query, {"_id": 0, "filename": 1})
-    return sorted({d.get("filename", "").strip() for d in docs if d.get("filename")})
+    docs = _latest_active_docs_by_filename(tenant_id)
+    return sorted(docs.keys())
+
+
+def _latest_active_docs_by_filename(tenant_id: str) -> dict[str, dict]:
+    """
+    Return only the newest non-superseded document per filename for a tenant.
+    This prevents retrieval from mixing old and new versions with same name.
+    """
+    cursor = documents_collection.find(
+        {"owner_admin": tenant_id, "superseded": {"$ne": True}},
+        {"_id": 0},
+    ).sort("created_at", -1)
+    latest: dict[str, dict] = {}
+    for doc in cursor:
+        filename = (doc.get("filename") or "").strip()
+        if filename and filename not in latest:
+            latest[filename] = doc
+    return latest
 
 
 # ---------------------------------------------------------------------------
@@ -422,38 +468,14 @@ def _build_casual_prompt(message: str, has_documents: bool) -> str:
     )
 
 
-def _ask_ollama_casual(message: str, has_documents: bool) -> str | None:
-    payload = {
-        "model": settings.ollama_model,
-        "prompt": _build_casual_prompt(message, has_documents),
-        "stream": False,
-        "options": {"temperature": 0.75},
-    }
-    body = json.dumps(payload).encode("utf-8")
-    req = request.Request(
-        url=f"{settings.ollama_base_url.rstrip('/')}/api/generate",
-        data=body,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    try:
-        with request.urlopen(req, timeout=45) as response:
-            raw = response.read().decode("utf-8")
-            result = json.loads(raw)
-            text = (result.get("response") or "").strip()
-            return text or None
-    except (URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
-        logger.warning("Ollama casual /api/generate failed: %s", exc)
-        return None
-
-
-def _ask_openai_casual(message: str, has_documents: bool) -> str | None:
-    if not settings.openai_api_key:
+def _ask_openai_compatible_casual(message: str, has_documents: bool) -> str | None:
+    api_key, base_url, model = _resolve_chat_api_config()
+    if not api_key or not model:
         return None
     try:
-        client = OpenAI(api_key=settings.openai_api_key)
+        client = OpenAI(api_key=api_key, base_url=base_url)
         completion = client.chat.completions.create(
-            model=settings.openai_model,
+            model=model,
             messages=[
                 {
                     "role": "system",
@@ -506,20 +528,7 @@ def _fallback_casual(message: str, has_documents: bool) -> str:
 
 
 def _casual_reply(message: str, has_documents: bool) -> str:
-    provider = settings.llm_provider.lower().strip()
-    generated: str | None = None
-    if provider == "ollama":
-        generated = _ask_ollama_casual(message, has_documents) or _ask_openai_casual(
-            message, has_documents
-        )
-    elif provider == "openai":
-        generated = _ask_openai_casual(message, has_documents) or _ask_ollama_casual(
-            message, has_documents
-        )
-    else:
-        generated = _ask_ollama_casual(message, has_documents) or _ask_openai_casual(
-            message, has_documents
-        )
+    generated = _ask_openai_compatible_casual(message, has_documents)
     if generated:
         return generated
     return _fallback_casual(message, has_documents)
@@ -559,6 +568,9 @@ def index_document(
     segments = _extract_segments(file_path)
     chunk_records = _chunk_segments(segments)
     chunks = [c["text"] for c in chunk_records]
+    normalized_chunks = [_normalize_text_for_hashing(chunk) for chunk in chunks]
+    chunk_hashes = [_sha256_hexdigest(chunk) for chunk in normalized_chunks]
+    doc_content_hash = _sha256_hexdigest("\n".join(normalized_chunks))
     doc_id = str(uuid4())
 
     ids = [f"{doc_id}_{i}" for i in range(len(chunks))]
@@ -568,12 +580,34 @@ def index_document(
             "filename": filename,
             "chunk": i,
             "page": chunk_records[i].get("page"),
+            "chunk_hash": chunk_hashes[i],
+            "doc_content_hash": doc_content_hash,
             "uploaded_by": uploaded_by,
             "owner_admin": owner_admin,
         }
         for i in range(len(chunks))
     ]
     collection.add(ids=ids, documents=chunks, metadatas=metadatas)
+
+    now = datetime.now(UTC)
+    # Supersede older versions with the same filename or identical content hash.
+    documents_collection.update_many(
+        {
+            "owner_admin": owner_admin,
+            "superseded": {"$ne": True},
+            "$or": [
+                {"filename": filename},
+                {"content_hash": doc_content_hash},
+            ],
+        },
+        {
+            "$set": {
+                "superseded": True,
+                "superseded_at": now,
+                "superseded_reason": "newer_version_uploaded",
+            }
+        },
+    )
 
     documents_collection.insert_one(
         {
@@ -582,7 +616,9 @@ def index_document(
             "uploaded_by": uploaded_by,
             "owner_admin": owner_admin,
             "chunks": len(chunks),
-            "created_at": datetime.now(UTC),
+            "content_hash": doc_content_hash,
+            "superseded": False,
+            "created_at": now,
         }
     )
     return doc_id
@@ -626,7 +662,11 @@ def ask_rag(
 ) -> tuple[str, list[str]]:
     collection = _get_collection()
 
-    allowed_filenames = _allowed_filenames_for_user(current_user)
+    tenant_id = _tenant_id_for_user(current_user)
+    active_docs_by_filename = (
+        _latest_active_docs_by_filename(tenant_id) if tenant_id else {}
+    )
+    allowed_filenames = sorted(active_docs_by_filename.keys())
     has_docs = bool(allowed_filenames)
     if _is_pure_small_talk(question):
         return _casual_reply(question, has_docs), []
@@ -647,7 +687,20 @@ def ask_rag(
     if not candidate_filenames:
         return "No accessible documents are indexed for this account yet.", []
 
-    where_filter: dict = {"filename": {"$in": candidate_filenames}}
+    candidate_doc_ids = [
+        active_docs_by_filename[f]["doc_id"]
+        for f in candidate_filenames
+        if f in active_docs_by_filename and active_docs_by_filename[f].get("doc_id")
+    ]
+    if not candidate_doc_ids:
+        return "No accessible documents are indexed for this account yet.", []
+
+    where_filter: dict = {
+        "$and": [
+            {"owner_admin": tenant_id},
+            {"doc_id": {"$in": candidate_doc_ids}},
+        ]
+    }
 
     results = collection.query(
         query_texts=[question],
@@ -658,6 +711,34 @@ def ask_rag(
     docs: list[str] = results.get("documents", [[]])[0]
     metadatas: list[dict] = results.get("metadatas", [[]])[0]
     distances: list[float] = results.get("distances", [[]])[0]
+
+    if tenant_id and metadatas:
+        doc_ids = sorted(
+            {
+                m.get("doc_id")
+                for m in metadatas
+                if isinstance(m, dict) and m.get("doc_id")
+            }
+        )
+        doc_lookup: dict[str, dict] = {}
+        if doc_ids:
+            cursor = documents_collection.find(
+                {"owner_admin": tenant_id, "doc_id": {"$in": doc_ids}},
+                {"_id": 0, "doc_id": 1, "created_at": 1, "content_hash": 1},
+            )
+            doc_lookup = {d["doc_id"]: d for d in cursor if d.get("doc_id")}
+
+        for meta in metadatas:
+            if not isinstance(meta, dict):
+                continue
+            doc_id = meta.get("doc_id")
+            if not doc_id:
+                continue
+            mongo_doc = doc_lookup.get(doc_id) or {}
+            meta["doc_created_at"] = mongo_doc.get("created_at")
+            meta["doc_content_hash"] = meta.get("doc_content_hash") or mongo_doc.get(
+                "content_hash"
+            )
 
     docs, metadatas = _rerank_retrieval(
         question, docs, metadatas, distances, top_k=max(top_k, 6)
@@ -681,18 +762,10 @@ def ask_rag(
     provider = settings.llm_provider.lower().strip()
     generated_answer: str | None = None
 
-    if provider == "ollama":
-        generated_answer = _ask_ollama(question, context) or _ask_openai(
-            question, context
-        )
-    elif provider == "openai":
-        generated_answer = _ask_openai(question, context) or _ask_ollama(
-            question, context
-        )
+    if provider in {"openai", "groq"}:
+        generated_answer = _ask_openai_compatible(question, context)
     else:
-        generated_answer = _ask_ollama(question, context) or _ask_openai(
-            question, context
-        )
+        generated_answer = None
 
     def _with_citations(answer: str) -> str:
         if citations:

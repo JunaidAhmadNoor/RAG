@@ -16,11 +16,14 @@ import {
   Typography,
 } from 'antd'
 import {
+  CheckOutlined,
   DeleteOutlined,
+  EditOutlined,
   MenuOutlined,
   PlusOutlined,
   RobotOutlined,
   SendOutlined,
+  CloseOutlined,
   UserOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
@@ -49,6 +52,8 @@ const ChatPage = () => {
   const [loading, setLoading] = useState(false)
   const [loadingSession, setLoadingSession] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [renamingSessionId, setRenamingSessionId] = useState(null)
+  const [renameValue, setRenameValue] = useState('')
 
   const scrollToBottom = () => {
     listEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -141,6 +146,39 @@ const ChatPage = () => {
     }
   }
 
+  const startRenameSession = (session, e) => {
+    e?.stopPropagation?.()
+    setRenamingSessionId(session.session_id)
+    setRenameValue(session.title || 'Chat')
+  }
+
+  const cancelRename = (e) => {
+    e?.stopPropagation?.()
+    setRenamingSessionId(null)
+    setRenameValue('')
+  }
+
+  const submitRename = async (sessionId, e) => {
+    e?.stopPropagation?.()
+    const nextTitle = renameValue.trim()
+    if (!nextTitle) {
+      message.warning('Chat name cannot be empty')
+      return
+    }
+    try {
+      await api.patch(`/api/chat/sessions/${encodeURIComponent(sessionId)}`, {
+        title: nextTitle,
+      })
+      message.success('Chat renamed')
+      setSessions((prev) => prev.map((s) => (s.session_id === sessionId ? { ...s, title: nextTitle } : s)))
+      setRenamingSessionId(null)
+      setRenameValue('')
+      loadSessions()
+    } catch (err) {
+      message.error(err.response?.data?.detail || 'Could not rename chat')
+    }
+  }
+
   const send = async () => {
     const text = question.trim()
     if (!text) return
@@ -198,6 +236,14 @@ const ChatPage = () => {
                 }}
                 actions={[
                   <Button
+                    key="edit"
+                    type="text"
+                    size="small"
+                    icon={<EditOutlined />}
+                    onClick={(e) => startRenameSession(item, e)}
+                    aria-label="Rename chat"
+                  />,
+                  <Button
                     key="del"
                     type="text"
                     size="small"
@@ -209,7 +255,36 @@ const ChatPage = () => {
                 ]}
               >
                 <List.Item.Meta
-                  title={<Text ellipsis>{item.title || 'Chat'}</Text>}
+                  title={
+                    renamingSessionId === item.session_id ? (
+                      <Flex gap={6} align="center" onClick={(e) => e.stopPropagation()}>
+                        <Input
+                          size="small"
+                          value={renameValue}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          onPressEnter={(e) => submitRename(item.session_id, e)}
+                          maxLength={120}
+                          autoFocus
+                        />
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<CheckOutlined />}
+                          onClick={(e) => submitRename(item.session_id, e)}
+                          aria-label="Save chat name"
+                        />
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<CloseOutlined />}
+                          onClick={cancelRename}
+                          aria-label="Cancel rename"
+                        />
+                      </Flex>
+                    ) : (
+                      <Text ellipsis>{item.title || 'Chat'}</Text>
+                    )
+                  }
                   description={
                     item.updated_at ? (
                       <Text type="secondary" style={{ fontSize: 11 }}>

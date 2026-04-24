@@ -13,7 +13,7 @@ Production-style starter project for a RAG platform with:
 
 - Frontend: React, Vite, Ant Design, Axios, Zustand
 - Backend: FastAPI, PyMongo, python-jose, passlib
-- RAG: ChromaDB + Sentence Transformers + Ollama (default local LLM)
+- RAG: ChromaDB + Sentence Transformers + OpenAI-compatible LLM APIs (Groq recommended)
 - Database: MongoDB
 
 ## Project Structure
@@ -31,10 +31,11 @@ Production-style starter project for a RAG platform with:
 3. Install dependencies:
    - `pip install -r requirements.txt`
 4. Create `.env` from `.env.example` and set secrets.
-5. Install and run Ollama (recommended):
-   - Install: [https://ollama.com/download](https://ollama.com/download)
-   - Pull model: `ollama pull llama3.1:8b`
-   - Keep Ollama running locally on `http://127.0.0.1:11434`
+5. Configure your LLM provider in `.env` (Groq recommended):
+   - `LLM_PROVIDER=groq`
+   - `LLM_API_KEY=your_groq_api_key`
+   - `LLM_BASE_URL=https://api.groq.com/openai/v1`
+   - `LLM_MODEL=llama-3.3-70b-versatile`
 6. Run API:
    - `uvicorn app.main:app --reload --port 8000`
 
@@ -58,7 +59,7 @@ Frontend runs on `http://localhost:5173`, backend on `http://localhost:8000`.
 
 ## Notes
 
-- Default LLM provider is Ollama (local/free) via `LLM_PROVIDER=ollama`.
-- OpenAI is optional backup: set `LLM_PROVIDER=openai` and provide `OPENAI_API_KEY`.
+- Default LLM provider is Groq via `LLM_PROVIDER=groq`.
+- OpenAI-compatible providers are supported via `LLM_PROVIDER=openai` (or `groq`) and `LLM_API_KEY`/`LLM_BASE_URL`/`LLM_MODEL`.
 - If no LLM provider is reachable, backend falls back to extractive answers from retrieved chunks.
 "# RAG" 
