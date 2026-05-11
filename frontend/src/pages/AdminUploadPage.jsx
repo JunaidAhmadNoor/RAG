@@ -32,10 +32,11 @@ const AdminUploadPage = () => {
   }
 
   return (
-    <Space direction="vertical" size={20} style={{ width: '100%' }}>
+    <Space direction="vertical" size={20} style={{ width: '100%' }} className="page-stack">
       <Card
+        className="page-hero"
         styles={{ body: { padding: screens.md ? 28 : 20 } }}
-        style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }}
+        style={{ borderColor: token.colorBorderSecondary }}
       >
         <Flex vertical gap={8}>
           <Flex align="center" gap={12}>
@@ -51,13 +52,13 @@ const AdminUploadPage = () => {
         </Flex>
       </Card>
 
-      <Card style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }}>
+      <Card className="glass-surface" style={{ borderColor: token.colorBorderSecondary }}>
         <Upload.Dragger
           multiple
           beforeUpload={() => false}
           fileList={fileList}
           onChange={({ fileList: next }) => setFileList(next)}
-          style={{ background: token.colorFillQuaternary }}
+          style={{ background: token.colorFillQuaternary, borderRadius: token.borderRadiusLG }}
         >
           <p className="ant-upload-drag-icon">
             <InboxOutlined style={{ fontSize: 48, color: token.colorPrimary }} />

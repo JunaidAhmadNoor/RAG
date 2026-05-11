@@ -88,12 +88,12 @@ const LoginPage = () => {
       <Col xs={24} md={13} lg={12} xl={11}>
         <Flex align="center" justify="center" style={{ minHeight: '100vh', padding: screens.md ? 32 : 16 }}>
           <Card
+            className="glass-surface"
             variant="borderless"
             style={{
               width: '100%',
               maxWidth: 440,
               borderRadius: panelRadius,
-              background: token.colorBgContainer,
               border: `1px solid ${token.colorBorderSecondary}`,
               boxShadow: screens.md ? token.boxShadowSecondary : undefined,
             }}

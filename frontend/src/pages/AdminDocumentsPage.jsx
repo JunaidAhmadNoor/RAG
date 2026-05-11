@@ -1,4 +1,4 @@
-import { App, Button, Card, Flex, Popconfirm, Table, Typography, theme } from 'antd'
+import { App, Button, Card, Flex, Popconfirm, Space, Table, Typography, theme } from 'antd'
 import { DeleteOutlined, FolderOpenOutlined } from '@ant-design/icons'
 import { useCallback, useEffect, useState } from 'react'
 import api from '../api/client'
@@ -77,20 +77,24 @@ const AdminDocumentsPage = () => {
   ]
 
   return (
-    <Card style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }}>
-      <Flex vertical gap={10} style={{ marginBottom: 20 }}>
-        <Flex align="center" gap={12}>
-          <FolderOpenOutlined style={{ fontSize: 22, color: token.colorPrimary }} />
-          <Typography.Title level={3} style={{ margin: 0 }}>
-            Documents
-          </Typography.Title>
+    <Space direction="vertical" size={20} style={{ width: '100%' }} className="page-stack">
+      <Card className="page-hero" style={{ borderColor: token.colorBorderSecondary }}>
+        <Flex vertical gap={10}>
+          <Flex align="center" gap={12}>
+            <FolderOpenOutlined style={{ fontSize: 22, color: token.colorPrimary }} />
+            <Typography.Title level={3} style={{ margin: 0 }}>
+              Documents
+            </Typography.Title>
+          </Flex>
+          <Typography.Paragraph type="secondary" style={{ marginBottom: 0, maxWidth: 720 }}>
+            Files in your workspace. Deleting removes the file, metadata, and vector index entries.
+          </Typography.Paragraph>
         </Flex>
-        <Typography.Paragraph type="secondary" style={{ marginBottom: 0, maxWidth: 720 }}>
-          Files in your workspace. Deleting removes the file, metadata, and vector index entries.
-        </Typography.Paragraph>
-      </Flex>
-      <Table rowKey="doc_id" loading={loading} columns={columns} dataSource={docs} scroll={{ x: true }} />
-    </Card>
+      </Card>
+      <Card className="glass-surface" style={{ borderColor: token.colorBorderSecondary }}>
+        <Table rowKey="doc_id" loading={loading} columns={columns} dataSource={docs} scroll={{ x: true }} />
+      </Card>
+    </Space>
   )
 }
 

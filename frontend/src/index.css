@@ -11,11 +11,35 @@ body,
 
 body {
   font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
-  background: radial-gradient(ellipse 130% 100% at 50% -10%, #243447 0%, #1a2432 42%, #141c28 100%);
+  background:
+    radial-gradient(circle at 8% 12%, rgba(124, 157, 255, 0.22), transparent 30%),
+    radial-gradient(circle at 88% 10%, rgba(109, 213, 173, 0.16), transparent 28%),
+    radial-gradient(ellipse 120% 110% at 50% -10%, #202c3f 0%, #161f2f 45%, #0f1724 100%);
   background-attachment: fixed;
+  color: #eef4ff;
 }
 
-/* Full-height chat: only the message column scrolls */
+::selection {
+  background: rgba(124, 157, 255, 0.35);
+  color: #f8fbff;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 179, 255, 0.35);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+}
+
 .app-shell--fill {
   height: 100vh;
   max-height: 100vh;
@@ -36,4 +60,31 @@ body {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+}
+
+.page-stack {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.page-hero {
+  border: 1px solid rgba(164, 184, 235, 0.16);
+  border-radius: 18px;
+  background: linear-gradient(150deg, rgba(110, 144, 255, 0.18), rgba(25, 38, 57, 0.78) 45%, rgba(18, 28, 43, 0.94));
+  box-shadow: 0 20px 60px rgba(5, 8, 15, 0.35);
+}
+
+.glass-surface {
+  border: 1px solid rgba(164, 184, 235, 0.15);
+  border-radius: 16px;
+  background: linear-gradient(170deg, rgba(44, 59, 82, 0.82), rgba(20, 29, 43, 0.92));
+  box-shadow: 0 16px 44px rgba(4, 8, 16, 0.32);
+}
+
+.metric-card {
+  border: 1px solid rgba(164, 184, 235, 0.14);
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(48, 63, 88, 0.76), rgba(21, 31, 46, 0.92));
 }

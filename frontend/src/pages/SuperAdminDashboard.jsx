@@ -265,11 +265,11 @@ const SuperAdminDashboard = () => {
   )
 
   return (
-    <Space direction="vertical" size={24} style={{ width: '100%' }}>
+    <Space direction="vertical" size={24} style={{ width: '100%' }} className="page-stack">
       <Card
+        className="page-hero"
         style={{
           borderColor: token.colorBorderSecondary,
-          background: `linear-gradient(135deg, ${token.colorPrimary}18, ${token.colorBgContainer})`,
         }}
         styles={{ body: { padding: screens.md ? 28 : 16 } }}
       >
@@ -307,12 +307,12 @@ const SuperAdminDashboard = () => {
 
       <Row gutter={[12, 12]}>
         <Col xs={24} sm={8}>
-          <Card size="small" style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }}>
+          <Card size="small" className="metric-card" style={{ borderColor: token.colorBorderSecondary }}>
             <Statistic title="Admins" value={totals.admins} valueStyle={{ color: token.colorText }} />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card size="small" style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }}>
+          <Card size="small" className="metric-card" style={{ borderColor: token.colorBorderSecondary }}>
             <Statistic
               title={isMobile ? 'Team users (all)' : 'Team users (all workspaces)'}
               value={totals.team}
@@ -321,13 +321,13 @@ const SuperAdminDashboard = () => {
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card size="small" style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }}>
+          <Card size="small" className="metric-card" style={{ borderColor: token.colorBorderSecondary }}>
             <Statistic title={isMobile ? 'Documents (all)' : 'Indexed documents (all)'} value={totals.docs} valueStyle={{ color: token.colorText }} />
           </Card>
         </Col>
       </Row>
 
-      <Card style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }} styles={{ body: isMobile ? { padding: 12 } : undefined }}>
+      <Card className="glass-surface" style={{ borderColor: token.colorBorderSecondary }} styles={{ body: isMobile ? { padding: 12 } : undefined }}>
         {isMobile ? (
           adminCards
         ) : (

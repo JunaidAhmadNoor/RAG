@@ -77,7 +77,8 @@ const AppLayout = ({ children, fullBleed = false, variant = 'default' }) => {
       alignItems: 'center',
       borderBottom: `1px solid ${token.colorBorderSecondary}`,
       background: token.Layout?.headerBg || token.colorBgElevated,
-      backdropFilter: 'blur(12px)',
+      backdropFilter: 'blur(18px)',
+      boxShadow: '0 10px 28px rgba(3, 7, 13, 0.24)',
     }),
     [token],
   )
@@ -110,8 +111,9 @@ const AppLayout = ({ children, fullBleed = false, variant = 'default' }) => {
       <Typography.Text
         strong
         style={{
-          fontSize: 17,
-          letterSpacing: '-0.02em',
+          fontSize: 16,
+          textTransform: 'uppercase',
+          letterSpacing: '0.08em',
           color: token.colorText,
           whiteSpace: 'nowrap',
         }}
@@ -167,6 +169,7 @@ const AppLayout = ({ children, fullBleed = false, variant = 'default' }) => {
         style={{
           borderColor: token.colorBorder,
           background: token.colorFillQuaternary,
+          borderRadius: 999,
         }}
       >
         {screens.sm ? 'Logout' : ''}
@@ -256,6 +259,7 @@ const AppLayout = ({ children, fullBleed = false, variant = 'default' }) => {
                 width: '100%',
                 margin: '0 auto',
                 padding: screens.md ? 24 : 16,
+                paddingTop: screens.md ? 26 : 16,
               }
         }
       >

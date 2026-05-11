@@ -303,9 +303,10 @@ const ChatPage = () => {
 
   const bubbleBase = {
     maxWidth: !screens.md ? 'calc(100% - 52px)' : 720,
-    padding: '12px 16px',
+    padding: '14px 16px',
     borderRadius: token.borderRadiusLG,
     border: `1px solid ${token.colorBorderSecondary}`,
+    boxShadow: '0 10px 24px rgba(4, 8, 15, 0.2)',
   }
 
   return (
@@ -324,6 +325,7 @@ const ChatPage = () => {
           style={{
             borderRight: `1px solid ${token.colorBorderSecondary}`,
             overflow: 'hidden',
+            background: 'linear-gradient(180deg, rgba(19, 30, 45, 0.92), rgba(16, 24, 36, 0.94))',
           }}
         >
           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>{sessionList}</div>
@@ -342,7 +344,7 @@ const ChatPage = () => {
           minWidth: 0,
           minHeight: 0,
           overflow: 'hidden',
-          background: `${token.colorBgLayout}66`,
+          background: 'linear-gradient(180deg, rgba(18, 27, 40, 0.72), rgba(15, 23, 34, 0.86))',
           padding: screens.md ? '16px 24px 24px' : '12px 14px 16px',
         }}
       >
@@ -356,6 +358,7 @@ const ChatPage = () => {
             <Typography.Title level={4} style={{ margin: 0 }}>
               Document assistant
             </Typography.Title>
+            <Tag color="blue">RAG grounded</Tag>
           </Flex>
           <Button type="primary" ghost icon={<PlusOutlined />} onClick={startNewChat}>
             New chat
@@ -405,8 +408,8 @@ const ChatPage = () => {
                       ...bubbleBase,
                       background:
                         item.role === 'user'
-                          ? `linear-gradient(135deg, ${token.colorPrimary}55, ${token.colorPrimary}18)`
-                          : token.colorFillQuaternary,
+                          ? `linear-gradient(140deg, ${token.colorPrimary}66, ${token.colorPrimary}18 62%, rgba(10, 16, 26, 0.4))`
+                          : 'linear-gradient(160deg, rgba(50, 66, 90, 0.72), rgba(25, 35, 50, 0.9))',
                       borderColor: item.role === 'user' ? `${token.colorPrimary}44` : token.colorBorderSecondary,
                     }}
                   >

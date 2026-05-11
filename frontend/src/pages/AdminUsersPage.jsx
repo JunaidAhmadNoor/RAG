@@ -101,8 +101,8 @@ const AdminUsersPage = () => {
   ]
 
   return (
-    <Space direction="vertical" size={20} style={{ width: '100%' }}>
-      <Card style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }} styles={{ body: { padding: screens.md ? 28 : 20 } }}>
+    <Space direction="vertical" size={20} style={{ width: '100%' }} className="page-stack">
+      <Card className="page-hero" style={{ borderColor: token.colorBorderSecondary }} styles={{ body: { padding: screens.md ? 28 : 20 } }}>
         <Flex vertical gap={8}>
           <Flex align="center" gap={12} wrap="wrap">
             <TeamOutlined style={{ fontSize: 22, color: token.colorPrimary }} />
@@ -118,6 +118,7 @@ const AdminUsersPage = () => {
       </Card>
 
       <Card
+        className="glass-surface"
         size="small"
         title={
           <Space>
@@ -125,7 +126,7 @@ const AdminUsersPage = () => {
             <span>Add user</span>
           </Space>
         }
-        style={{ borderColor: token.colorBorderSecondary, background: token.colorFillQuaternary }}
+        style={{ borderColor: token.colorBorderSecondary }}
       >
         <Form form={form} layout="vertical" onFinish={onCreate} initialValues={{ can_upload: false }}>
           <Row gutter={[16, 16]}>
@@ -151,7 +152,7 @@ const AdminUsersPage = () => {
         </Form>
       </Card>
 
-      <Card style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }}>
+      <Card className="glass-surface" style={{ borderColor: token.colorBorderSecondary }}>
         <Table rowKey="username" loading={loading} columns={columns} dataSource={users} pagination={false} scroll={{ x: true }} />
       </Card>
     </Space>
